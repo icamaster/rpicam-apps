@@ -1,0 +1,4 @@
+[Desktop Entry]
+Name=unclutter
+Exec=sudo sh -c "unclutter -idle 1"
+Type=Application

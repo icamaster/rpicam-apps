@@ -1,0 +1,4 @@
+[Desktop Entry]
+Name=micropiscope
+Exec=sudo sh -c "sudo micropiscope --framerate 40 -f --viewfinder-width 1920 --viewfinder-height 1080 --viewfinder-mode 2028:1520:10:P"
+Type=Application
