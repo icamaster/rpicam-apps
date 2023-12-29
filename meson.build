@@ -42,6 +42,8 @@ summary({
 rpicam_app_src = []
 rpicam_app_dep = [libcamera_dep]
 
+pigpio_dep = declare_dependency(link_args : ['-lpigpio'], include_directories : include_directories('/usr/include'))
+
 subdir('core')
 subdir('encoder')
 subdir('image')
@@ -76,5 +78,7 @@ summary({
             'qt preview' : enable_qt,
             'OpenCV postprocessing' : enable_opencv,
             'TFLite postprocessing' : enable_tflite,
+            'micropiscope' : enable_micropiscope,
+            'enable_rpicam_apps' : enable_rpicam_apps
         },
         bool_yn : true, section : 'Build configuration')

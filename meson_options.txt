@@ -33,3 +33,13 @@ option('neon_flags',
         choices: ['arm64', 'armv8-neon', 'auto'],
         value : 'auto',
         description : 'User selectable arm-neon optimisation flags')
+
+option('enable_micropiscope',
+        type : 'boolean',
+        value : false,
+        description : 'Enable micropiscope support')
+
+option('enable_rpicam_apps',
+        type : 'boolean',
+        value : true,
+        description : 'Enable rpicam_apps support')
