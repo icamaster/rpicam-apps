@@ -9,7 +9,7 @@ At the moment it is very basic, but it allows saving images, safely removing a U
 
 Build and install instructions taken and modified from the [official raspberry pi website](https://www.raspberrypi.com/documentation/computers/camera_software.html#building-libcamera-and-rpicam-apps): 
 
-`sudo apt install -y libcamera-dev libepoxy-dev libjpeg-dev libtiff5-dev`
+`sudo apt install -y libcamera-dev libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev`
 
 `sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev`
 
@@ -32,8 +32,6 @@ As this app was meant to run at boot as a full screen application with no other 
 * Disable removable media autorun popup by going to `File manager -> Edit -> Preferences -> Volume Management` and unticking 'Show available options...'`
 
 * Autohide the mouse pointer:
-
-    `sudo apt update`
 
     `sudo apt install unclutter`
 
