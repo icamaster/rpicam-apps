@@ -25,6 +25,10 @@
 
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_opengl3.h"
+#include <SDL.h>
 
 class EglPreview : public Preview
 {
@@ -74,6 +78,7 @@ private:
 	int height_;
 	unsigned int max_image_width_;
 	unsigned int max_image_height_;
+	SDL_Window* sdl_window;
 };
 
 static GLint compile_shader(GLenum target, const char *source)
@@ -176,7 +181,7 @@ EglPreview::EglPreview(Options const *options) : Preview(options), last_fd_(-1),
 	egl_display_ = eglGetDisplay(display_);
 	if (!egl_display_)
 		throw std::runtime_error("eglGetDisplay() failed");
-
+		
 	EGLint egl_major, egl_minor;
 
 	if (!eglInitialize(egl_display_, &egl_major, &egl_minor))
@@ -188,11 +193,27 @@ EglPreview::EglPreview(Options const *options) : Preview(options), last_fd_(-1),
 	height_ = options_->preview_height;
 	makeWindow("rpicam-app");
 
-	// gl_setup() has to happen later, once we're sure we're in the display thread.
+	// Setup SDL
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
+	{
+        throw std::runtime_error(SDL_GetError());
+	}
+
+	sdl_window = SDL_CreateWindowFrom((void *)window_);
+
+	if (!sdl_window) 
+		throw std::runtime_error("SDL_CreateWindowFrom() failed");
 }
 
 EglPreview::~EglPreview()
 {
+	if (!first_time_) 
+	{
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
+		SDL_Quit();
+	}
 }
 
 static void no_border(Display *display, Window window)
@@ -364,6 +385,20 @@ void EglPreview::makeBuffer(int fd, size_t size, StreamInfo const &info, Buffer 
 			throw std::runtime_error("eglMakeCurrent failed");
 		gl_setup(info.width, info.height, width_, height_);
 		first_time_ = false;
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		// Setup Platform/Renderer backends
+		if (!ImGui_ImplSDL2_InitForOpenGL(sdl_window, egl_context_))
+			throw std::runtime_error("ImGui_ImplSDL2_InitForOpenGL() failed");
+		const char* glsl_version = "#version 100";
+		if (!ImGui_ImplOpenGL3_Init(glsl_version))
+			throw std::runtime_error("ImGui_ImplOpenGL3_Init() failed");
 	}
 
 	buffer.fd = fd;
@@ -416,11 +451,39 @@ void EglPreview::Show(int fd, libcamera::Span<uint8_t> span, StreamInfo const &i
 	if (buffer.fd == -1)
 		makeBuffer(fd, span.size(), info, buffer);
 
+ 	SDL_Event event;
+	while (SDL_PollEvent(&event))
+	{
+		ImGui_ImplSDL2_ProcessEvent(&event);
+		if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
+			std::cout << "MOUSE BUTTON:" << event.button.button << std::endl;
+		}
+		else if (event.type == SDL_MOUSEMOTION) {
+			std::cout << "MOUSE MOTION:" << event.motion.x << " " << event.motion.y << std::endl;
+		}
+		else {
+			std::cout << "EVENT:" << event.type << std::endl;
+		}
+
+	}
+
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+	bool show_demo_window = true;
+	ImGui::ShowDemoWindow(&show_demo_window);
+
+
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glBindTexture(GL_TEXTURE_EXTERNAL_OES, buffer.texture);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 	EGLBoolean success [[maybe_unused]] = eglSwapBuffers(egl_display_, egl_surface_);
 	if (last_fd_ >= 0)
 		done_callback_(last_fd_);

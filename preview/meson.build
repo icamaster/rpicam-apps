@@ -20,10 +20,14 @@ endif
 
 enable_egl = get_option('enable_egl')
 x11_deps = dependency('x11', required : false)
-epoxy_deps = dependency('epoxy', required : false)
+sdl_dep = dependency('sdl2', required : true)
+epoxy_deps = dependency('epoxy', required : true)
 
-if enable_egl and x11_deps.found() and epoxy_deps.found()
-    rpicam_app_dep += [x11_deps, epoxy_deps]
+imgui_prj = subproject('imgui')
+imgui_dep = dependency('imgui', required : true)
+
+if enable_egl and x11_deps.found() and sdl_dep.found() and epoxy_deps.found()
+    rpicam_app_dep += [x11_deps, sdl_dep, epoxy_deps, imgui_dep]
     rpicam_app_src += files('egl_preview.cpp')
     cpp_arguments += '-DLIBEGL_PRESENT=1'
 else

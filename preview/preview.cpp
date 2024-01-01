@@ -42,6 +42,7 @@ Preview *make_preview(Options const *options)
 		}
 		catch (std::exception const &e)
 		{
+			LOG_ERROR(e.what());
 			try
 			{
 #if LIBDRM_PRESENT
@@ -55,8 +56,7 @@ Preview *make_preview(Options const *options)
 			}
 			catch (std::exception const &e)
 			{
-				LOG(1, "Preview window unavailable");
-				return make_null_preview(options);
+				throw std::runtime_error("Preview window unavailable");
 			}
 		}
 	}
